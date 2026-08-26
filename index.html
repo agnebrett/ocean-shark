@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fretwork</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Albert+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F5EFE3; --surface:#FDFAF2; --raise:#FFFFFF;
+    --ink:#31251A; --ink2:#7d6c56; --line:#DDD0BA;
+    --accent:#A9701F; --accent-ink:#FFF8EA; --accent-soft:#F0E2C8;
+    --good:#3F7A52; --good-soft:#E3EEE4; --bad:#B4402F; --bad-soft:#F5E3DE;
+    --lock:#B4A68F; --dot:#31251A; --dot-num:#F5EFE3;
+    --shadow:0 1px 2px rgba(49,37,26,.08), 0 6px 18px rgba(49,37,26,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171210; --surface:#211A13; --raise:#2A2118;
+      --ink:#F1E8D7; --ink2:#A6957D; --line:#3A2F23;
+      --accent:#D9A257; --accent-ink:#2A1D0C; --accent-soft:#3B2D1B;
+      --good:#7FB98E; --good-soft:#24352A; --bad:#E07B62; --bad-soft:#402319;
+      --lock:#6B5D4A; --dot:#F1E8D7; --dot-num:#171210;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171210; --surface:#211A13; --raise:#2A2118;
+    --ink:#F1E8D7; --ink2:#A6957D; --line:#3A2F23;
+    --accent:#D9A257; --accent-ink:#2A1D0C; --accent-soft:#3B2D1B;
+    --good:#7FB98E; --good-soft:#24352A; --bad:#E07B62; --bad-soft:#402319;
+    --lock:#6B5D4A; --dot:#F1E8D7; --dot-num:#171210;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Albert Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:16px; line-height:1.5;
+    min-height:100vh;
+  }
+  #app{max-width:480px; margin:0 auto; padding:0 18px 48px; min-height:100vh; display:flex; flex-direction:column;}
+
+  .display{font-family:"Fraunces", Georgia, serif;}
+  h1,h2,h3{text-wrap:balance;}
+  button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  button:focus-visible, a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px;}
+
+  .eyebrow{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2);}
+
+  /* ---------- home ---------- */
+  .masthead{padding:34px 0 8px;}
+  .masthead h1{font-family:"Fraunces", Georgia, serif; font-weight:900; font-size:44px; line-height:1.02; letter-spacing:-.01em;}
+  .masthead p{color:var(--ink2); margin-top:6px; max-width:34ch;}
+  .statrow{display:flex; gap:10px; margin:18px 0 6px; flex-wrap:wrap;}
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:8px 14px; font-size:14px; font-weight:600;
+  }
+  .chip .n{font-family:"Fraunces", Georgia, serif; font-weight:900; font-size:17px; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .toolrow{display:flex; gap:10px; margin:14px 0 8px;}
+  .toolbtn{
+    flex:1; text-align:center; padding:12px 10px; border-radius:14px; font-weight:700; font-size:15px;
+    background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow);
+  }
+  .toolbtn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent;}
+  .toolbtn[disabled]{opacity:.45; cursor:default; box-shadow:none;}
+
+  /* the path: a guitar-string line with inlay-dot nodes */
+  .path{position:relative; margin-top:26px; padding-left:52px;}
+  .path::before{
+    content:""; position:absolute; left:19px; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(var(--line), var(--line)); border-radius:2px;
+  }
+  .unit{position:relative; margin-bottom:22px;}
+  .node{
+    position:absolute; left:-52px; top:2px; width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Fraunces", Georgia, serif; font-weight:900; font-size:17px;
+    background:radial-gradient(circle at 32% 28%, var(--raise), var(--surface));
+    border:2px solid var(--line); box-shadow:var(--shadow); color:var(--ink2);
+  }
+  .unit.open .node{border-color:var(--accent); color:var(--accent);}
+  .unit.done .node{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .unit.locked .node{color:var(--lock);}
+  .unitcard{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; box-shadow:var(--shadow);
+  }
+  .unit.locked .unitcard{opacity:.55; box-shadow:none;}
+  .unitcard h3{font-family:"Fraunces", Georgia, serif; font-weight:700; font-size:19px;}
+  .unitcard .sub{font-size:13.5px; color:var(--ink2); margin-top:1px;}
+  .chordtags{display:flex; gap:6px; flex-wrap:wrap; margin-top:9px;}
+  .chordtag{
+    font-size:12.5px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:var(--accent-soft); color:var(--ink);
+  }
+  .stages{display:flex; gap:8px; margin-top:12px;}
+  .stagebtn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:9px 4px 8px; border-radius:12px; border:1.5px solid var(--line);
+    font-size:12.5px; font-weight:700; background:var(--raise);
+  }
+  .stagebtn .tick{font-size:14px; line-height:1;}
+  .stagebtn.done{border-color:var(--good); color:var(--good); background:var(--good-soft);}
+  .stagebtn.next{border-color:var(--accent); color:var(--accent); background:var(--surface);}
+  .stagebtn.lockd{color:var(--lock); background:none; cursor:default;}
+  .homefoot{margin-top:26px; text-align:center;}
+  .homefoot button{color:var(--ink2); font-size:13px; text-decoration:underline; text-underline-offset:3px;}
+
+  /* ---------- session shell ---------- */
+  .shead{display:flex; align-items:center; gap:14px; padding:18px 0 10px; position:sticky; top:0; background:var(--bg); z-index:5;}
+  .xbtn{font-size:22px; color:var(--ink2); padding:4px 8px; line-height:1;}
+  .pbar{flex:1; height:10px; border-radius:999px; background:var(--line); overflow:hidden;}
+  .pbar i{display:block; height:100%; border-radius:999px; background:var(--accent); transition:width .35s ease; min-width:10px;}
+  .stage-eyebrow{margin:8px 0 4px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    padding:22px 20px; box-shadow:var(--shadow); margin-top:10px;
+    animation:rise .3s ease both;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  .chordname{font-family:"Fraunces", Georgia, serif; font-weight:900; font-size:34px; text-align:center; line-height:1.1;}
+  .tip{color:var(--ink2); text-align:center; font-size:14.5px; max-width:32ch; margin:8px auto 0;}
+  .diagwrap{display:flex; justify-content:center; margin:6px 0;}
+  .diagwrap svg{width:min(250px, 72vw); height:auto;}
+  .legend{margin-top:14px; text-align:center; font-size:12.5px; color:var(--ink2);}
+  .legend b{color:var(--ink);}
+
+  .prompt{font-size:19px; font-weight:600; text-align:center; margin:14px 0 4px; text-wrap:balance;}
+  .prompt .display{font-weight:900; font-size:22px;}
+
+  .opts{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .opts.diagrams{flex-direction:row;}
+  .opt{
+    border:2px solid var(--line); border-radius:14px; background:var(--raise);
+    padding:13px 14px; font-size:16.5px; font-weight:600; text-align:center;
+    transition:border-color .12s, background .12s;
+  }
+  .opts.diagrams .opt{flex:1; padding:8px 4px 2px;}
+  .opts.diagrams svg{width:100%; height:auto;}
+  .opt.sel-good{border-color:var(--good); background:var(--good-soft);}
+  .opt.sel-bad{border-color:var(--bad); background:var(--bad-soft);}
+  .opt.reveal{border-color:var(--good); border-style:dashed;}
+  .opt[disabled]{cursor:default;}
+
+  .feedback{margin-top:14px; border-radius:14px; padding:12px 16px; font-weight:600; font-size:15px; text-align:center;}
+  .feedback.good{background:var(--good-soft); color:var(--good);}
+  .feedback.bad{background:var(--bad-soft); color:var(--bad);}
+
+  .actionbar{position:sticky; bottom:0; padding:14px 0 18px; margin-top:auto; background:linear-gradient(transparent, var(--bg) 35%);}
+  .bigbtn{
+    display:block; width:100%; padding:15px; border-radius:16px;
+    background:var(--accent); color:var(--accent-ink);
+    font-size:17px; font-weight:700; letter-spacing:.01em;
+    box-shadow:var(--shadow); transition:transform .08s;
+  }
+  .bigbtn:active{transform:scale(.98);}
+  .bigbtn.ghost{background:var(--surface); color:var(--ink); border:1.5px solid var(--line);}
+  .bigbtn[disabled]{opacity:.45; cursor:default;}
+  .btncol{display:flex; flex-direction:column; gap:10px;}
+
+  .buildhint{font-size:13px; color:var(--ink2); text-align:center; margin-top:10px; max-width:36ch; margin-left:auto; margin-right:auto;}
+  .tapboard [data-s]{cursor:pointer;}
+
+  /* ---------- results ---------- */
+  .resultwrap{text-align:center; padding-top:8vh;}
+  .bignum{font-family:"Fraunces", Georgia, serif; font-weight:900; font-size:74px; line-height:1; font-variant-numeric:tabular-nums;}
+  .bignum.pass{color:var(--good);} .bignum.fail{color:var(--bad);}
+  .resultmsg{margin:12px auto 4px; max-width:32ch; font-size:17px; font-weight:600;}
+  .resultsub{color:var(--ink2); font-size:14px; max-width:36ch; margin:4px auto 0;}
+
+  /* ---------- chord book ---------- */
+  .bookgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;}
+  .bookcard{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:12px 8px 8px; text-align:center; box-shadow:var(--shadow);
+  }
+  .bookcard svg{width:100%; max-width:150px; height:auto;}
+  .bookcard .nm{font-family:"Fraunces", Georgia, serif; font-weight:700; font-size:16px;}
+  .bookunit{margin-top:22px;}
+  .bookunit h3{font-family:"Fraunces", Georgia, serif; font-weight:700; font-size:18px; margin-bottom:2px;}
+  .bookunit .sub{font-size:13px; color:var(--ink2);}
+
+  /* svg pieces */
+  .s-line{stroke:var(--ink2); stroke-width:1.4;}
+  .s-fret{stroke:var(--line); stroke-width:2;}
+  .s-nut{fill:var(--ink);}
+  .s-dot{fill:var(--dot);}
+  .s-dotnum{fill:var(--dot-num); font-family:"Albert Sans", sans-serif; font-size:13px; font-weight:700;}
+  .s-mark{stroke:var(--ink2); stroke-width:2; fill:none;}
+  .s-good{fill:var(--good);} .s-bad{fill:var(--bad);}
+  .s-ghost{fill:none; stroke:var(--good); stroke-width:2; stroke-dasharray:4 3;}
+  .s-user{fill:var(--accent);}
+  .s-tap{fill:transparent;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+
+/* ============================== data ============================== */
+/* frets/fingers are low E → high e. fret -1 = mute, 0 = open. finger 0 = none. */
+const CHORDS = [
+  {id:"E",  name:"E major",  frets:[0,2,2,1,0,0],    fingers:[0,2,3,1,0,0],   barre:null, tip:"The shape everything else grows from. Both E strings ring open."},
+  {id:"A",  name:"A major",  frets:[-1,0,2,2,2,0],   fingers:[0,0,1,2,3,0],   barre:null, tip:"Three fingers share fret 2, side by side. Skip the low E string."},
+  {id:"D",  name:"D major",  frets:[-1,-1,0,2,3,2],  fingers:[0,0,0,1,3,2],   barre:null, tip:"A tight triangle on the three thinnest strings. Strum from the D string down."},
+  {id:"Em", name:"E minor",  frets:[0,2,2,0,0,0],    fingers:[0,2,3,0,0,0],   barre:null, tip:"Two fingers — the easiest chord on the guitar. E major with the index lifted."},
+  {id:"Am", name:"A minor",  frets:[-1,0,2,2,1,0],   fingers:[0,0,2,3,1,0],   barre:null, tip:"The E major shape moved down one string. Skip the low E."},
+  {id:"Dm", name:"D minor",  frets:[-1,-1,0,2,3,1],  fingers:[0,0,0,2,3,1],   barre:null, tip:"D major's sadder cousin — the note on the thin E string drops to fret 1."},
+  {id:"G",  name:"G major",  frets:[3,2,0,0,0,3],    fingers:[2,1,0,0,0,3],   barre:null, tip:"A big stretch across the whole neck, with four open strings ringing in the middle."},
+  {id:"C",  name:"C major",  frets:[-1,3,2,0,1,0],   fingers:[0,3,2,0,1,0],   barre:null, tip:"Fingers make a diagonal staircase down frets 3 – 2 – 1."},
+  {id:"E7", name:"E7",       frets:[0,2,0,1,0,0],    fingers:[0,2,0,1,0,0],   barre:null, tip:"E major with the ring finger lifted off. Instant blues."},
+  {id:"A7", name:"A7",       frets:[-1,0,2,0,2,0],   fingers:[0,0,2,0,3,0],   barre:null, tip:"A major with a hole opened in the middle of the shape."},
+  {id:"D7", name:"D7",       frets:[-1,-1,0,2,1,2],  fingers:[0,0,0,2,1,3],   barre:null, tip:"D major's triangle flipped upside down."},
+  {id:"G7", name:"G7",       frets:[3,2,0,0,0,1],    fingers:[3,2,0,0,0,1],   barre:null, tip:"G major, but the top note walks all the way down to fret 1."},
+  {id:"C7", name:"C7",       frets:[-1,3,2,3,1,0],   fingers:[0,3,2,4,1,0],   barre:null, tip:"C major plus a pinky on the G string, fret 3."},
+  {id:"B7", name:"B7",       frets:[-1,2,1,2,0,2],   fingers:[0,2,1,3,0,4],   barre:null, tip:"All four fingers, with the open B string ringing in the middle."},
+  {id:"Fmaj7", name:"F major 7", frets:[-1,-1,3,2,1,0], fingers:[0,0,3,2,1,0], barre:null, tip:"The gentle way into F — a 3-2-1 staircase, no barre required."},
+  {id:"Cadd9", name:"Cadd9",  frets:[-1,3,2,0,3,3],  fingers:[0,2,1,0,3,4],   barre:null, tip:"A jangly C. The top two fingers stay planted when you swap to G."},
+  {id:"Dsus4", name:"Dsus4",  frets:[-1,-1,0,2,3,3], fingers:[0,0,0,1,3,4],   barre:null, tip:"D major with the pinky dropped on top — tension that wants to resolve back to D."},
+  {id:"Asus2", name:"Asus2",  frets:[-1,0,2,2,0,0],  fingers:[0,0,2,3,0,0],   barre:null, tip:"A major minus one finger — open and airy."},
+  {id:"F",  name:"F major",  frets:[1,3,3,2,1,1],    fingers:[1,3,4,2,1,1],   barre:{fret:1,from:0,to:5,finger:1}, tip:"The famous one. The index finger lies flat across all six strings at fret 1."},
+  {id:"F#m", name:"F♯ minor", frets:[2,4,4,2,2,2],   fingers:[1,3,4,1,1,1],   barre:{fret:2,from:0,to:5,finger:1}, tip:"The E minor shape slid up two frets, behind a full barre."},
+  {id:"Bm", name:"B minor",  frets:[-1,2,4,4,3,2],   fingers:[0,1,3,4,2,1],   barre:{fret:2,from:1,to:5,finger:1}, tip:"The A minor shape slid up two frets, behind a five-string barre."},
+  {id:"Bb", name:"B♭ major", frets:[-1,1,3,3,3,1],   fingers:[0,1,2,3,4,1],   barre:{fret:1,from:1,to:5,finger:1}, tip:"The A major shape moved up one fret, behind a five-string barre."}
+];
+const byId = Object.fromEntries(CHORDS.map(c=>[c.id,c]));
+
+const UNITS = [
+  {title:"Open the door",   sub:"Your first three shapes",          chords:["E","A","D"]},
+  {title:"Minor moods",     sub:"The same doors, in minor",         chords:["Em","Am","Dm"]},
+  {title:"Campfire pair",   sub:"The two chords in every songbook", chords:["G","C"]},
+  {title:"Blues sevenths",  sub:"Open shapes with a hole in them",  chords:["E7","A7","D7"]},
+  {title:"More sevenths",   sub:"The rest of the seventh family",   chords:["G7","C7","B7"]},
+  {title:"Color chords",    sub:"Sus, add and the friendly F",      chords:["Fmaj7","Cadd9","Dsus4","Asus2"]},
+  {title:"The barres",      sub:"One finger across the neck",       chords:["F","F#m","Bm","Bb"]}
+];
+const STAGES = [
+  {key:"learn",     label:"Learn"},
+  {key:"recognize", label:"Recognize"},
+  {key:"build",     label:"Build"}
+];
+const PASS = 0.7;
+
+/* ============================== state ============================== */
+const KEY = "fretwork-v1";
+function loadP(){ try{ const p = JSON.parse(localStorage.getItem(KEY)); if(p && p.done) return p; }catch(e){} return {done:{}, strength:{}}; }
+function saveP(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
+let P = loadP();
+
+function stageDone(u,sk){ return !!P.done[u+"-"+sk]; }
+function unitDone(u){ return STAGES.every(s=>stageDone(u,s.key)); }
+function unitUnlocked(u){ return u===0 || unitDone(u-1); }
+function stageUnlocked(u,si){
+  if(!unitUnlocked(u)) return false;
+  if(si===0) return true;
+  return stageDone(u, STAGES[si-1].key);
+}
+function masteredChords(){
+  const out=[];
+  UNITS.forEach((un,u)=>{ if(unitDone(u)) out.push(...un.chords); });
+  return out;
+}
+function bumpStrength(id, ok){
+  const s = P.strength[id]||0;
+  P.strength[id] = Math.max(0, Math.min(5, s + (ok?1:-1)));
+}
+
+/* ============================== helpers ============================== */
+const app = document.getElementById("app");
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+/* pick n distractor chords, biased toward similar shapes */
+function distractors(id, n){
+  const t = byId[id];
+  const scored = CHORDS.filter(c=>c.id!==id).map(c=>{
+    let sim=0; for(let s=0;s<6;s++) if(c.frets[s]===t.frets[s]) sim++;
+    return {c, sim: sim + Math.random()*2.5};
+  });
+  scored.sort((a,b)=>b.sim-a.sim);
+  return shuffle(scored.slice(0, Math.max(n*2,4))).slice(0,n).map(x=>x.c.id);
+}
+
+/* ============================== chord SVG ============================== */
+const SG=32, FG=40, PX=26, PT=42, NF=4;
+const SW=PX*2+5*SG, SH=PT+NF*FG+14;
+const sx = s => PX + s*SG;
+const fy = f => PT + f*FG;
+const dy = f => PT + (f-0.5)*FG;
+
+function svgOpen(){ return `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg" role="img">`; }
+function boardBase(){
+  let h = `<rect class="s-nut" x="${PX-3}" y="${PT-7}" width="${5*SG+6}" height="7" rx="2"/>`;
+  for(let f=1; f<=NF; f++) h += `<line class="s-fret" x1="${sx(0)}" y1="${fy(f)}" x2="${sx(5)}" y2="${fy(f)}"/>`;
+  for(let s=0; s<6; s++) h += `<line class="s-line" x1="${sx(s)}" y1="${PT}" x2="${sx(s)}" y2="${fy(NF)}"/>`;
+  return h;
+}
+function markOpenMute(s, v, cls){
+  const cx=sx(s), cy=PT-20, c=cls||"s-mark";
+  if(v===0) return `<circle class="${c}" cx="${cx}" cy="${cy}" r="5.5"/>`;
+  return `<path class="${c}" d="M ${cx-5} ${cy-5} L ${cx+5} ${cy+5} M ${cx+5} ${cy-5} L ${cx-5} ${cy+5}"/>`;
+}
+function dot(s, f, num, cls){
+  let h = `<circle class="${cls||"s-dot"}" cx="${sx(s)}" cy="${dy(f)}" r="12"/>`;
+  if(num) h += `<text class="s-dotnum" x="${sx(s)}" y="${dy(f)+4.5}" text-anchor="middle">${num}</text>`;
+  return h;
+}
+function svgChord(chord, opts){
+  opts = opts||{};
+  const showF = opts.fingers !== false;
+  let h = svgOpen() + boardBase();
+  if(chord.barre){
+    const b=chord.barre;
+    h += `<rect class="s-dot" x="${sx(b.from)-12}" y="${dy(b.fret)-12}" width="${(b.to-b.from)*SG+24}" height="24" rx="12"/>`;
+    if(showF) h += `<text class="s-dotnum" x="${sx(b.from)}" y="${dy(b.fret)+4.5}" text-anchor="middle">${b.finger}</text>`;
+  }
+  for(let s=0;s<6;s++){
+    const f=chord.frets[s];
+    if(f<=0){ h += markOpenMute(s,f); continue; }
+    if(chord.barre && f===chord.barre.fret && s>=chord.barre.from && s<=chord.barre.to) continue;
+    h += dot(s, f, showF ? (chord.fingers[s]||"") : "");
+  }
+  return h + "</svg>";
+}
+
+/* interactive board: userFrets[s] = 0 open / 1..4 fretted, muted[s] bool */
+function svgUserLayer(userFrets, muted){
+  let h="";
+  for(let s=0;s<6;s++){
+    if(muted[s]){ h += markOpenMute(s,-1); continue; }
+    if(userFrets[s]>0) h += dot(s, userFrets[s], "", "s-user");
+    else h += markOpenMute(s,0);
+  }
+  return h;
+}
+function svgTapLayer(){
+  let h="";
+  for(let s=0;s<6;s++){
+    h += `<rect class="s-tap" data-s="${s}" data-top="1" x="${sx(s)-16}" y="0" width="32" height="${PT-8}"/>`;
+    for(let f=1;f<=NF;f++)
+      h += `<rect class="s-tap" data-s="${s}" data-f="${f}" x="${sx(s)-16}" y="${fy(f-1)}" width="32" height="${FG}"/>`;
+  }
+  return h;
+}
+/* graded board: user's answer colored green/red, missed spots ghosted */
+function svgGraded(chord, userFrets, muted){
+  let h = svgOpen() + boardBase();
+  for(let s=0;s<6;s++){
+    const want = chord.frets[s];
+    const got  = muted[s] ? -1 : userFrets[s];
+    const ok = want===got;
+    if(got>0) h += dot(s, got, "", ok?"s-good":"s-bad");
+    else h += markOpenMute(s, got, ok ? "s-mark" : "s-badmark");
+    if(!ok){
+      if(want>0) h += `<circle class="s-ghost" cx="${sx(s)}" cy="${dy(want)}" r="12"/>`;
+      else h += markOpenMute(s, want, "s-goodmark");
+    }
+  }
+  h += `<style>.s-badmark{stroke:var(--bad); stroke-width:2.5; fill:none;} .s-goodmark{stroke:var(--good); stroke-width:2.5; fill:none;}</style>`;
+  return h + "</svg>";
+}
+
+/* ============================== views ============================== */
+let view = {name:"home"};
+let session = null;
+
+function go(v){ view=v; render(); window.scrollTo(0,0); }
+
+function render(){
+  if(view.name==="home") renderHome();
+  else if(view.name==="learn") renderLearnCard();
+  else if(view.name==="quiz") renderQuestion();
+  else if(view.name==="results") renderResults();
+  else if(view.name==="book") renderBook();
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const mastered = masteredChords().length;
+  const anyMastered = mastered>0;
+  let units="";
+  UNITS.forEach((un,u)=>{
+    const unlocked = unitUnlocked(u);
+    const done = unitDone(u);
+    const cls = done ? "done" : unlocked ? "open" : "locked";
+    let stages="";
+    STAGES.forEach((st,si)=>{
+      const d = stageDone(u,st.key);
+      const open = stageUnlocked(u,si);
+      const c = d ? "done" : open ? "next" : "lockd";
+      stages += `<button class="stagebtn ${c}" ${open? `data-u="${u}" data-si="${si}"` : "disabled"}>
+        <span class="tick">${d?"✓":open?"●":"🔒"}</span>${st.label}</button>`;
+    });
+    units += `<div class="unit ${cls}">
+      <div class="node">${done?"✓":u+1}</div>
+      <div class="unitcard">
+        <h3>${esc(un.title)}</h3>
+        <div class="sub">${esc(un.sub)}</div>
+        <div class="chordtags">${un.chords.map(id=>`<span class="chordtag">${esc(byId[id].name)}</span>`).join("")}</div>
+        <div class="stages">${stages}</div>
+      </div>
+    </div>`;
+  });
+
+  app.innerHTML = `
+    <header class="masthead">
+      <div class="eyebrow">Acoustic guitar · chord shapes</div>
+      <h1>Fretwork</h1>
+      <p>Learn every common chord shape by heart — before your fingers ever touch the strings.</p>
+    </header>
+    <div class="statrow">
+      <span class="chip"><span class="n">${mastered}</span> of ${CHORDS.length} shapes mastered</span>
+    </div>
+    <div class="toolrow">
+      <button class="toolbtn primary" id="reviewbtn" ${anyMastered?"":"disabled"}>Review</button>
+      <button class="toolbtn" id="bookbtn">Chord book</button>
+    </div>
+    <div class="path">${units}</div>
+    <div class="homefoot"><button id="resetbtn">Reset all progress</button></div>
+  `;
+  app.querySelectorAll(".stagebtn[data-u]").forEach(b=>{
+    b.addEventListener("click", ()=> startStage(+b.dataset.u, +b.dataset.si));
+  });
+  app.querySelector("#bookbtn").addEventListener("click", ()=>go({name:"book"}));
+  const rb = app.querySelector("#reviewbtn");
+  if(anyMastered) rb.addEventListener("click", startReview);
+  app.querySelector("#resetbtn").addEventListener("click", ()=>{
+    if(confirm("Erase all progress and start over?")){ P={done:{},strength:{}}; saveP(); render(); }
+  });
+}
+
+/* ---------- session plumbing ---------- */
+function sessionHeader(){
+  const pct = session.total ? Math.round(100*session.doneCount/session.total) : 0;
+  return `<div class="shead">
+    <button class="xbtn" id="quitbtn" aria-label="Quit level">✕</button>
+    <div class="pbar"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+function bindQuit(){
+  app.querySelector("#quitbtn").addEventListener("click", ()=>{
+    if(confirm("Leave this level? Progress in it won't be saved.")) go({name:"home"});
+  });
+}
+function stageEyebrow(){
+  if(session.kind==="review") return "Review · keeping it sharp";
+  const un = UNITS[session.unit];
+  const st = session.kind==="learn" ? (session.phase==="cards"?"Learn":"Learn · quick check")
+           : session.kind==="recognize" ? "Recognize" : "Build";
+  return `Level ${session.unit+1} · ${esc(un.title)} · ${st}`;
+}
+
+function startStage(u, si){
+  const kind = STAGES[si].key;
+  const ids = UNITS[u].chords;
+  if(kind==="learn"){
+    session = {kind:"learn", unit:u, phase:"cards", cards:ids.slice(), i:0,
+               queue:[], total:ids.length*2, doneCount:0, firstTry:{}};
+    go({name:"learn"});
+    return;
+  }
+  let queue=[];
+  if(kind==="recognize"){
+    ids.forEach(id=>{ queue.push({t:"name",chord:id}); queue.push({t:"diagram",chord:id}); });
+    /* fold in a couple of earlier chords so old shapes stay warm */
+    const older = shuffle(UNITS.slice(0,u).flatMap(x=>x.chords)).slice(0,2);
+    older.forEach(id=> queue.push({t: Math.random()<.5?"name":"diagram", chord:id}));
+  }else{
+    ids.forEach(id=> queue.push({t:"build", chord:id}));
+  }
+  queue = shuffle(queue);
+  queue.forEach((q,i)=>q.key=i);
+  session = {kind, unit:u, queue, total:queue.length, doneCount:0, firstTry:{}};
+  go({name:"quiz"});
+}
+
+function startReview(){
+  const pool = masteredChords();
+  const ranked = shuffle(pool).sort((a,b)=>(P.strength[a]||0)-(P.strength[b]||0));
+  const picks = ranked.slice(0, Math.min(8, ranked.length));
+  let queue = picks.map(id=>{
+    const r=Math.random();
+    return {t: r<.4?"build": r<.7?"name":"diagram", chord:id};
+  });
+  queue = shuffle(queue);
+  queue.forEach((q,i)=>q.key=i);
+  session = {kind:"review", unit:null, queue, total:queue.length, doneCount:0, firstTry:{}};
+  go({name:"quiz"});
+}
+
+/* ---------- learn cards ---------- */
+function renderLearnCard(){
+  const id = session.cards[session.i];
+  const c = byId[id];
+  session.doneCount = session.i; /* cards count as first half of progress */
+  const legend = session.i===0 ? `<div class="legend"><b>1</b> index · <b>2</b> middle · <b>3</b> ring · <b>4</b> pinky · ○ open string · ✕ don't play</div>` : "";
+  app.innerHTML = sessionHeader() + `
+    <div class="eyebrow stage-eyebrow">${stageEyebrow()}</div>
+    <div class="card">
+      <div class="chordname">${esc(c.name)}</div>
+      <div class="diagwrap">${svgChord(c)}</div>
+      <p class="tip">${esc(c.tip)}</p>
+      ${legend}
+    </div>
+    <div class="actionbar"><button class="bigbtn" id="nextbtn">${session.i < session.cards.length-1 ? "Next chord" : "Got it — quiz me"}</button></div>
+  `;
+  bindQuit();
+  app.querySelector("#nextbtn").addEventListener("click", ()=>{
+    session.i++;
+    if(session.i < session.cards.length){ render(); window.scrollTo(0,0); return; }
+    /* move to quick-check phase */
+    session.phase="check";
+    let queue = shuffle(session.cards.map(id=>({t:"name", chord:id})));
+    queue.forEach((q,i)=>q.key=i);
+    session.queue=queue;
+    session.doneCount=session.cards.length;
+    session.total=session.cards.length*2;
+    go({name:"quiz"});
+  });
+}
+
+/* ---------- quiz engine ---------- */
+function markAnswer(q, ok){
+  if(!(q.key in session.firstTry)){
+    session.firstTry[q.key]=ok;
+    bumpStrength(q.chord, ok);
+  }
+  if(ok) session.doneCount++;
+}
+function advance(q, ok){
+  if(!ok) session.queue.push(Object.assign({}, q, {retry:true}));
+  session.queue.shift();
+  if(session.queue.length===0) finishSession(); else render();
+  window.scrollTo(0,0);
+}
+function finishSession(){
+  const vals = Object.values(session.firstTry);
+  const acc = vals.length ? vals.filter(Boolean).length/vals.length : 1;
+  let passed=true;
+  if(session.kind==="recognize" || session.kind==="build") passed = acc>=PASS;
+  if(passed && session.unit!==null){
+    const key = session.kind==="learn" ? "learn" : session.kind;
+    P.done[session.unit+"-"+key]=true;
+  }
+  saveP();
+  go({name:"results", acc, passed});
+}
+
+function renderQuestion(){
+  const q = session.queue[0];
+  if(q.t==="build") return renderBuild(q);
+  const c = byId[q.chord];
+  const opts = shuffle([q.chord, ...distractors(q.chord, 2)]);
+  let body;
+  if(q.t==="name"){
+    body = `
+      <div class="prompt">Which chord is this?</div>
+      <div class="diagwrap">${svgChord(c)}</div>
+      <div class="opts" id="opts">
+        ${opts.map(id=>`<button class="opt" data-id="${id}">${esc(byId[id].name)}</button>`).join("")}
+      </div>`;
+  }else{
+    body = `
+      <div class="prompt">Which one is <span class="display">${esc(c.name)}</span>?</div>
+      <div class="opts diagrams" id="opts">
+        ${opts.map(id=>`<button class="opt" data-id="${id}" aria-label="chord diagram option">${svgChord(byId[id], {fingers:false})}</button>`).join("")}
+      </div>`;
+  }
+  app.innerHTML = sessionHeader() + `
+    <div class="eyebrow stage-eyebrow">${stageEyebrow()}</div>
+    <div class="card">${body}<div id="fb"></div></div>
+    <div class="actionbar" id="abar"></div>
+  `;
+  bindQuit();
+  app.querySelectorAll("#opts .opt").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const pick = b.dataset.id;
+      const ok = pick===q.chord;
+      app.querySelectorAll("#opts .opt").forEach(x=>x.disabled=true);
+      b.classList.add(ok?"sel-good":"sel-bad");
+      markAnswer(q, ok);
+      const fb = app.querySelector("#fb");
+      if(ok){
+        fb.innerHTML = `<div class="feedback good">✓ That's ${esc(c.name)}</div>`;
+        setTimeout(()=>advance(q,true), 750);
+      }else{
+        app.querySelector(`#opts .opt[data-id="${q.chord}"]`).classList.add("reveal");
+        const pickedName = esc(byId[pick].name);
+        fb.innerHTML = `<div class="feedback bad">That was ${pickedName}. ${esc(c.name)} is outlined — it'll come around again.</div>` +
+          (q.t==="name" ? "" : `<div class="diagwrap" style="margin-top:10px">${svgChord(c)}</div>`);
+        app.querySelector("#abar").innerHTML = `<button class="bigbtn" id="contbtn">Continue</button>`;
+        app.querySelector("#contbtn").addEventListener("click", ()=>advance(q,false));
+      }
+    });
+  });
+}
+
+/* ---------- build questions ---------- */
+function renderBuild(q){
+  const c = byId[q.chord];
+  const userFrets=[0,0,0,0,0,0], muted=[false,false,false,false,false,false];
+  app.innerHTML = sessionHeader() + `
+    <div class="eyebrow stage-eyebrow">${stageEyebrow()}</div>
+    <div class="card">
+      <div class="prompt">Build <span class="display">${esc(c.name)}</span></div>
+      <div class="diagwrap tapboard" id="board"></div>
+      <div class="buildhint">Tap the grid to place fingers. Tap above the nut to flag a string ✕ muted. Untouched strings ring ○ open.</div>
+      <div id="fb"></div>
+    </div>
+    <div class="actionbar" id="abar"><button class="bigbtn" id="checkbtn">Check</button></div>
+  `;
+  bindQuit();
+  const board = app.querySelector("#board");
+  function draw(){
+    board.innerHTML = svgOpen() + boardBase() + `<g>${svgUserLayer(userFrets, muted)}</g>` + svgTapLayer() + "</svg>";
+  }
+  draw();
+  board.addEventListener("click", e=>{
+    const t = e.target.closest("[data-s]");
+    if(!t || session.checked) return;
+    const s = +t.dataset.s;
+    if(t.dataset.top){ muted[s]=!muted[s]; if(muted[s]) userFrets[s]=0; }
+    else{
+      const f = +t.dataset.f;
+      if(userFrets[s]===f) userFrets[s]=0;
+      else { userFrets[s]=f; muted[s]=false; }
+    }
+    draw();
+  });
+  app.querySelector("#checkbtn").addEventListener("click", ()=>{
+    session.checked=true;
+    let ok=true;
+    for(let s=0;s<6;s++){
+      const got = muted[s] ? -1 : userFrets[s];
+      if(got !== c.frets[s]){ ok=false; break; }
+    }
+    markAnswer(q, ok);
+    board.innerHTML = svgGraded(c, userFrets, muted);
+    board.classList.remove("tapboard");
+    const fb = app.querySelector("#fb");
+    if(ok){
+      fb.innerHTML = `<div class="feedback good">✓ Nailed it — that's ${esc(c.name)}.</div>`;
+    }else{
+      fb.innerHTML = `<div class="feedback bad">Not quite. Dashed circles show what you missed. Here's ${esc(c.name)}:</div>
+        <div class="diagwrap" style="margin-top:10px">${svgChord(c)}</div>`;
+    }
+    app.querySelector("#abar").innerHTML = `<button class="bigbtn" id="contbtn">Continue</button>`;
+    app.querySelector("#contbtn").addEventListener("click", ()=>{ session.checked=false; advance(q, ok); });
+  });
+}
+
+/* ---------- results ---------- */
+function renderResults(){
+  const pct = Math.round(view.acc*100);
+  const passed = view.passed;
+  const isReview = session.kind==="review";
+  const isLearn = session.kind==="learn";
+  let msg, sub;
+  if(isReview){ msg = pct===100 ? "Sharp as ever." : "Review done — weak spots noted.";
+    sub = "Shapes you missed will show up first next time you review."; }
+  else if(isLearn){ msg = "Level complete — shapes introduced.";
+    sub = "Next up: Recognize, where you pick these shapes out of a lineup."; }
+  else if(passed){ msg = session.kind==="build" ? "Level passed — you built every shape." : "Level passed.";
+    sub = pct===100 ? "A perfect run." : "Anything you missed came back around until you got it."; }
+  else { msg = "You got through it, but it was shaky.";
+    sub = `You need ${Math.round(PASS*100)}% right on the first try to pass. Run it again — repetition is the whole point.`; }
+  const btns = passed || isReview
+    ? `<button class="bigbtn" id="homebtn">Continue</button>`
+    : `<button class="bigbtn" id="retrybtn">Run it again</button><button class="bigbtn ghost" id="homebtn">Back to the path</button>`;
+  app.innerHTML = `
+    <div class="resultwrap">
+      <div class="eyebrow">${isReview?"Review":"First-try accuracy"}</div>
+      <div class="bignum ${passed?"pass":"fail"}">${pct}%</div>
+      <div class="resultmsg">${msg}</div>
+      <div class="resultsub">${sub}</div>
+    </div>
+    <div class="actionbar"><div class="btncol">${btns}</div></div>
+  `;
+  app.querySelector("#homebtn").addEventListener("click", ()=>go({name:"home"}));
+  const rb = app.querySelector("#retrybtn");
+  if(rb) rb.addEventListener("click", ()=>{
+    const si = STAGES.findIndex(s=>s.key===session.kind);
+    startStage(session.unit, si);
+  });
+}
+
+/* ---------- chord book ---------- */
+function renderBook(){
+  let h = `<div class="shead"><button class="xbtn" id="backbtn" aria-label="Back">✕</button>
+    <div class="eyebrow" style="flex:1">Chord book · every shape in the path</div></div>`;
+  UNITS.forEach((un,u)=>{
+    h += `<div class="bookunit"><h3>${u+1} · ${esc(un.title)}</h3><div class="sub">${esc(un.sub)}</div>
+      <div class="bookgrid">` +
+      un.chords.map(id=>{
+        const c=byId[id];
+        return `<div class="bookcard">${svgChord(c)}<div class="nm">${esc(c.name)}</div></div>`;
+      }).join("") + `</div></div>`;
+  });
+  h += `<div class="legend" style="margin:22px 0"><b>1</b> index · <b>2</b> middle · <b>3</b> ring · <b>4</b> pinky · ○ open · ✕ don't play</div>`;
+  app.innerHTML = h;
+  app.querySelector("#backbtn").addEventListener("click", ()=>go({name:"home"}));
+}
+
+render();
+</script>
+</body>
+</html>
