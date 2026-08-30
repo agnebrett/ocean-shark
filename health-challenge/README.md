@@ -1,6 +1,6 @@
 # Vice Squad
 
-A shared daily log for a group health challenge. Every night, each person answers three questions on a 0–10 scale (0 = virtuous, 10 = disgraceful):
+A shared daily log for a group health challenge. Every night, each person answers three questions on a 0–10 scale (0 = did none of it, 10 = did a ton of it — so 10 is great for workout and terrible for the other two):
 
 1. Did you work out today?
 2. Did you drink alcohol today?

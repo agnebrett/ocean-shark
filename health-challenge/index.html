@@ -240,12 +240,15 @@
 <script>
 "use strict";
 
-/* ----- categories: 0 is virtue, 10 is disgrace ----- */
+/* ----- categories: 0 = did none of it, 10 = did a ton of it.
+   goodHigh marks the one where doing a ton is the virtue. ----- */
 const CATS = [
-  {key:"workout", label:"Workout", stat:"Strong", q:"Did you work out today?",  scale:"0 = crushed a full workout · 10 = did not move"},
-  {key:"alcohol", label:"Alcohol", stat:"Sober",  q:"Did you drink alcohol today?", scale:"0 = stone sober · 10 = went deep"},
-  {key:"vice",    label:"Vices",   stat:"Clean",  q:"Did you indulge another vice today?", scale:"0 = totally clean · 10 = gave in completely"},
+  {key:"workout", label:"Workout", stat:"Strong", goodHigh:true,  q:"Did you work out today?",  scale:"0 = did not move · 10 = crushed a huge workout"},
+  {key:"alcohol", label:"Alcohol", stat:"Sober",  goodHigh:false, q:"Did you drink alcohol today?", scale:"0 = stone sober · 10 = went deep"},
+  {key:"vice",    label:"Vices",   stat:"Clean",  goodHigh:false, q:"Did you indulge another vice today?", scale:"0 = totally clean · 10 = gave in completely"},
 ];
+/* color runs virtue=green → disgrace=red, whichever end the virtue is on */
+const badness = (cat, v) => cat.goodHigh ? 10 - v : v;
 
 /* ----- 0-10 color ramp: green → yellow → orange → red ----- */
 const STOPS = [[0,[30,158,90]],[4,[224,190,42]],[7,[224,123,43]],[10,[207,66,62]]];
@@ -386,7 +389,11 @@ function statsFor(pid){
     for (const c of CATS) sums[c.key] += Number(e[c.key]) || 0;
   }
   const pct = {};
-  for (const c of CATS) pct[c.key] = n ? Math.round((1 - sums[c.key]/(n*10)) * 100) : null;
+  for (const c of CATS){
+    if (!n){ pct[c.key] = null; continue; }
+    const frac = sums[c.key] / (n*10);
+    pct[c.key] = Math.round((c.goodHigh ? frac : 1 - frac) * 100);
+  }
   const vals = CATS.map(c => pct[c.key]).filter(v => v !== null);
   return {
     logged:n, days,
@@ -450,7 +457,7 @@ function renderLog(){
     seg.className = "seg";
     for (let i=0; i<=10; i++){
       const b = document.createElement("button");
-      const col = rampColor(i);
+      const col = rampColor(badness(c, i));
       b.type = "button";
       b.textContent = i;
       b.style.setProperty("--dot", col.css);
@@ -508,7 +515,7 @@ function boardMarkup(people){
         if (!e || e[c.key] === undefined){ out += `<span class="cell blank" title="${esc(p.name)} · ${fmtLong(d)} · not logged"></span>`; }
         else {
           const val = Number(e[c.key]);
-          out += `<span class="cell" style="background:${rampColor(val).css}" title="${esc(p.name)} · ${fmtLong(d)} · ${c.label}: ${val}"></span>`;
+          out += `<span class="cell" style="background:${rampColor(badness(c, val)).css}" title="${esc(p.name)} · ${fmtLong(d)} · ${c.label}: ${val}"></span>`;
         }
       }
       out += `</div></div>`;
@@ -518,7 +525,8 @@ function boardMarkup(people){
 }
 
 const legendHTML = () => `<div class="legend">
-  <span>0</span><span class="bar">${[0,2,4,6,8,10].map(v=>`<i style="background:${rampColor(v).css}"></i>`).join("")}</span><span>10</span>
+  <span>saint</span><span class="bar">${[0,2,4,6,8,10].map(v=>`<i style="background:${rampColor(v).css}"></i>`).join("")}</span><span>menace</span>
+  <span style="margin-left:10px">workout: 10 is green · booze &amp; vices: 0 is green</span>
   <span style="margin-left:10px"><span class="blank"></span> missed day</span>
 </div>`;
 
