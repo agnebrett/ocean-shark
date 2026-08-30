@@ -1,0 +1,589 @@
+<title>Vice Squad</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#FBFAF7; --card:#FFFFFF; --ink:#20241F; --muted:#6B7166;
+    --line:#E3E1D8; --cellline:#D8D5C9; --accent:#256C45; --accent-ink:#FFFFFF;
+    --danger:#CF423E; --shadow:0 1px 3px rgba(32,36,31,.08);
+    color-scheme:light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#151714; --card:#1C1F1A; --ink:#E9EBE4; --muted:#9AA093;
+      --line:#2E322B; --cellline:#3A3F36; --accent:#5FBF8A; --accent-ink:#10140F;
+      --danger:#E06561; --shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#151714; --card:#1C1F1A; --ink:#E9EBE4; --muted:#9AA093;
+    --line:#2E322B; --cellline:#3A3F36; --accent:#5FBF8A; --accent-ink:#10140F;
+    --danger:#E06561; --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--ink); margin:0;
+    font:16px/1.5 "Barlow", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 16px 80px}
+  header.top{
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    padding:26px 0 6px;
+  }
+  h1{
+    font-family:"Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight:700; font-size:clamp(34px,6vw,48px); letter-spacing:.02em;
+    text-transform:uppercase; margin:0;
+  }
+  .tagline{color:var(--muted); font-size:14px}
+  .mechip{
+    margin-left:auto; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); border-radius:999px; padding:6px 14px; font:600 14px "Barlow",sans-serif;
+    cursor:pointer; box-shadow:var(--shadow);
+  }
+  .mechip:hover{border-color:var(--accent)}
+  nav.tabs{
+    display:flex; gap:4px; border-bottom:2px solid var(--line);
+    margin:14px 0 22px; overflow-x:auto;
+  }
+  nav.tabs button{
+    appearance:none; background:none; border:none; cursor:pointer;
+    font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:600;
+    font-size:19px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--muted); padding:8px 16px 10px; border-bottom:3px solid transparent;
+    margin-bottom:-2px; white-space:nowrap;
+  }
+  nav.tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+  nav.tabs button:focus-visible, .mechip:focus-visible, .seg button:focus-visible,
+  .btn:focus-visible, .ghostbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .banner{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--danger);
+    border-radius:8px; padding:12px 16px; margin:0 0 18px; font-size:14px; color:var(--muted);
+  }
+  .banner strong{color:var(--ink)}
+
+  /* ---------- Log ---------- */
+  .logdate{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px}
+  .logdate label{font-weight:600; font-size:14px}
+  .logdate input[type=date]{
+    font:500 15px "Barlow",sans-serif; color:var(--ink); background:var(--card);
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px;
+  }
+  .logdate .hint{color:var(--muted); font-size:13px}
+  .qcard{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:18px 18px 16px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .qcard h3{
+    margin:0 0 2px; font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+    font-size:22px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+  }
+  .qcard .scale{color:var(--muted); font-size:13px; margin:0 0 12px}
+  .seg{display:flex; gap:5px; flex-wrap:wrap}
+  .seg button{
+    appearance:none; cursor:pointer; width:44px; height:40px; border-radius:8px;
+    border:1px solid var(--cellline); background:none; color:var(--ink);
+    font:600 15px "Barlow",sans-serif; font-variant-numeric:tabular-nums;
+    position:relative; padding:0 0 8px;
+  }
+  .seg button::after{
+    content:""; position:absolute; left:8px; right:8px; bottom:6px; height:4px;
+    border-radius:2px; background:var(--dot);
+  }
+  .seg button[aria-pressed="true"]{
+    background:var(--dot); border-color:var(--dot); color:var(--seltext); font-weight:700;
+  }
+  .seg button[aria-pressed="true"]::after{display:none}
+  .btn{
+    appearance:none; cursor:pointer; border:none; border-radius:10px;
+    background:var(--accent); color:var(--accent-ink);
+    font:700 17px "Barlow",sans-serif; letter-spacing:.02em; padding:12px 34px;
+  }
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .ghostbtn{
+    appearance:none; cursor:pointer; background:none; border:1px solid var(--line);
+    border-radius:10px; color:var(--ink); font:600 14px "Barlow",sans-serif; padding:8px 16px;
+  }
+  .submitrow{display:flex; align-items:center; gap:14px; margin-top:6px}
+  .submitnote{color:var(--muted); font-size:14px}
+
+  /* ---------- Board ---------- */
+  .legend{display:flex; align-items:center; gap:10px; color:var(--muted); font-size:13px; margin:0 0 14px; flex-wrap:wrap}
+  .legend .bar{display:flex; gap:2px}
+  .legend .bar i{width:14px; height:14px; border-radius:3px; display:block}
+  .legend .blank{width:14px; height:14px; border-radius:3px; border:1px solid var(--cellline); display:inline-block; vertical-align:-2px}
+  .boardscroll{overflow-x:auto; padding-bottom:8px}
+  .board{min-width:max-content}
+  .brow{display:flex; align-items:center}
+  .blabel{
+    position:sticky; left:0; z-index:2; background:var(--bg);
+    width:76px; flex:0 0 76px; font-size:12px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; padding-right:8px;
+  }
+  .bname{
+    position:sticky; left:0; z-index:2; background:var(--bg);
+    font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700;
+    font-size:24px; letter-spacing:.04em; text-transform:uppercase;
+    padding:20px 8px 6px 0; display:inline-flex; align-items:baseline; gap:10px;
+  }
+  .bname small{font-family:"Barlow",sans-serif; font-weight:600; font-size:13px; color:var(--muted); letter-spacing:0; text-transform:none}
+  .cells{display:flex; gap:3px}
+  .cell{
+    width:16px; height:16px; flex:0 0 16px; border-radius:3px;
+  }
+  .cell.blank{border:1px solid var(--cellline)}
+  .cell.prejoin{visibility:hidden}
+  .brow + .brow{margin-top:3px}
+  .dayhead{display:flex; align-items:flex-end}
+  .dayhead .cells span{
+    width:16px; flex:0 0 16px; text-align:center; font-size:9px; color:var(--muted);
+    font-variant-numeric:tabular-nums; position:relative;
+  }
+  .dayhead .cells span.m::before{
+    content:attr(data-m); position:absolute; top:-14px; left:0; font-size:10px;
+    font-weight:700; letter-spacing:.06em; color:var(--ink); white-space:nowrap;
+  }
+  .dayhead .cells span.today{color:var(--accent); font-weight:700}
+  .dayhead{padding-top:16px}
+
+  /* ---------- Leaderboard ---------- */
+  .lgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px}
+  .lcard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow)}
+  .lcard h3{
+    margin:0 0 12px; font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+    font-size:22px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  }
+  .lcard h3 small{font-family:"Barlow",sans-serif; font-size:12px; font-weight:500; color:var(--muted); letter-spacing:0; text-transform:none; display:block}
+  .lrow{display:grid; grid-template-columns:22px 1fr 52px; align-items:center; gap:10px; padding:6px 0}
+  .lrow .rk{color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums}
+  .lrow .nm{font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .lrow .nm .track{display:block; height:5px; border-radius:3px; background:var(--line); margin-top:4px; overflow:hidden}
+  .lrow .nm .track i{display:block; height:100%; border-radius:3px}
+  .lrow .pct{font-weight:700; font-size:16px; text-align:right; font-variant-numeric:tabular-nums}
+  .lrow .pct small{color:var(--muted); font-weight:500; font-size:11px}
+
+  /* ---------- Me ---------- */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin:0 0 22px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow)}
+  .stat .v{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:34px; font-weight:700; line-height:1.05; font-variant-numeric:tabular-nums}
+  .stat .k{color:var(--muted); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; margin-top:2px}
+
+  /* ---------- Modal ---------- */
+  dialog{
+    border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
+    padding:22px; max-width:340px; width:90vw; box-shadow:0 10px 40px rgba(0,0,0,.25);
+  }
+  dialog::backdrop{background:rgba(10,12,10,.45)}
+  dialog h3{margin:0 0 4px; font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:.03em}
+  dialog p{color:var(--muted); font-size:13px; margin:0 0 14px}
+  .plist{display:flex; flex-direction:column; gap:6px; margin-bottom:14px}
+  .plist button{
+    text-align:left; appearance:none; cursor:pointer; background:none; color:var(--ink);
+    border:1px solid var(--line); border-radius:9px; padding:9px 13px; font:600 15px "Barlow",sans-serif;
+  }
+  .plist button[data-me="1"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent)}
+  .addrow{display:flex; gap:8px}
+  .addrow input{
+    flex:1; min-width:0; font:500 15px "Barlow",sans-serif; color:var(--ink); background:var(--bg);
+    border:1px solid var(--line); border-radius:9px; padding:9px 12px;
+  }
+  .empty{color:var(--muted); font-size:15px; padding:30px 0; text-align:center}
+
+  #toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--bg); border-radius:10px; padding:10px 20px;
+    font:600 14px "Barlow",sans-serif; opacity:0; pointer-events:none; transition:all .25s;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){ #toast{transition:none} }
+  [hidden]{display:none!important}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Vice Squad</h1>
+    <span class="tagline">Daily accountability. Public shame included.</span>
+    <button class="mechip" id="mechip">Who are you?</button>
+  </header>
+
+  <div class="banner" id="offline" hidden>
+    <strong>Live sync unavailable.</strong> Open this page from its claude.ai artifact link while signed in — that's where the shared data lives. Nothing you enter here will be saved.
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="log">Log Today</button>
+    <button role="tab" aria-selected="false" data-tab="board">The Board</button>
+    <button role="tab" aria-selected="false" data-tab="leaders">Leaderboard</button>
+    <button role="tab" aria-selected="false" data-tab="me">Me</button>
+  </nav>
+
+  <section id="view-log"></section>
+  <section id="view-board" hidden></section>
+  <section id="view-leaders" hidden></section>
+  <section id="view-me" hidden></section>
+</div>
+
+<dialog id="whodlg">
+  <h3>Who are you?</h3>
+  <p>Pick your name on each device you use. New challenger? Add yourself — your track starts today.</p>
+  <div class="plist" id="plist"></div>
+  <form class="addrow" id="addform">
+    <input id="addname" placeholder="Add a name…" maxlength="20" autocomplete="off">
+    <button class="ghostbtn" type="submit">Join</button>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+
+/* ----- categories: 0 is virtue, 10 is disgrace ----- */
+const CATS = [
+  {key:"workout", label:"Workout", stat:"Strong", q:"Did you work out today?",  scale:"0 = crushed a full workout · 10 = did not move"},
+  {key:"alcohol", label:"Alcohol", stat:"Sober",  q:"Did you drink alcohol today?", scale:"0 = stone sober · 10 = went deep"},
+  {key:"vice",    label:"Vices",   stat:"Clean",  q:"Did you indulge another vice today?", scale:"0 = totally clean · 10 = gave in completely"},
+];
+
+/* ----- 0-10 color ramp: green → yellow → orange → red ----- */
+const STOPS = [[0,[30,158,90]],[4,[224,190,42]],[7,[224,123,43]],[10,[207,66,62]]];
+function rampColor(v){
+  v = Math.max(0, Math.min(10, v));
+  for (let i=0; i<STOPS.length-1; i++){
+    const [a,ca] = STOPS[i], [b,cb] = STOPS[i+1];
+    if (v <= b){
+      const t = (v-a)/(b-a);
+      const c = ca.map((x,j)=>Math.round(x + (cb[j]-x)*t));
+      return {css:`rgb(${c[0]},${c[1]},${c[2]})`, rgb:c};
+    }
+  }
+}
+function textOn(rgb){ // readable label color on a ramp chip
+  const lum = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]) / 255;
+  return lum > 0.62 ? "#20241F" : "#FFFFFF";
+}
+
+/* ----- dates: the challenge day rolls over on Eastern time ----- */
+const ET = new Intl.DateTimeFormat("en-CA", {timeZone:"America/New_York", year:"numeric", month:"2-digit", day:"2-digit"});
+const todayET = () => ET.format(new Date());              // YYYY-MM-DD
+const toUTC   = iso => { const [y,m,d] = iso.split("-").map(Number); return Date.UTC(y, m-1, d); };
+const addDays = (iso,n) => { const t = new Date(toUTC(iso) + n*86400000); return t.toISOString().slice(0,10); };
+const dayDiff = (a,b) => Math.round((toUTC(b) - toUTC(a)) / 86400000);
+const MONTHS  = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const fmtLong = iso => { const [y,m,d] = iso.split("-").map(Number); return `${MONTHS[m-1]} ${d}, ${y}`; };
+
+/* ----- state ----- */
+let db = null;
+let roster = [];                 // [{id, name, joined}]
+let entries = new Map();         // "pid_date" -> {workout, alcohol, vice}
+let meId = null;
+let tab = "log";
+let logDate = todayET();
+let picks = {workout:null, alcohol:null, vice:null};
+
+try { meId = localStorage.getItem("vs_me") || null; } catch(e){}
+
+const $ = id => document.getElementById(id);
+const me = () => roster.find(p => p.id === meId) || null;
+const entry = (pid, date) => entries.get(pid + "_" + date) || null;
+
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+/* ----- shared store wiring ----- */
+async function connect(){
+  db = window.claude ? await claude.use("db") : null;
+  if (!db){ $("offline").hidden = false; renderAll(); return; }
+  db.collection("roster").onSnapshot(snap => {
+    roster = snap.docs.filter(d=>d.exists).map(d => ({id:d.id, ...d.data()}))
+                      .sort((a,b) => (a.joined < b.joined ? -1 : a.joined > b.joined ? 1 : a.name.localeCompare(b.name)));
+    if (meId && !me()){ meId = null; try{ localStorage.removeItem("vs_me"); }catch(e){} }
+    renderAll();
+  }, e => toast("Roster sync lost — reload the page"));
+  db.collection("entries").onSnapshot(snap => {
+    entries = new Map();
+    for (const d of snap.docs){ if (d.exists) entries.set(d.id, d.data()); }
+    renderAll();
+  }, e => toast("Entry sync lost — reload the page"));
+}
+
+async function addPerson(name){
+  name = name.trim().replace(/\s+/g," ");
+  if (!name) return;
+  if (roster.some(p => p.name.toLowerCase() === name.toLowerCase())){ toast(name + " is already on the board"); return; }
+  if (!db){ toast("Live sync unavailable — can't join from here"); return; }
+  try {
+    const ref = await db.collection("roster").add({name, joined: todayET(), created: Date.now()});
+    meId = ref.id;
+    try{ localStorage.setItem("vs_me", meId); }catch(e){}
+    toast("Welcome to the squad, " + name);
+    renderAll();
+  } catch(e){ toast("Couldn't join: " + (e && e.message || "unknown error")); }
+}
+
+async function submitLog(){
+  const p = me();
+  if (!p || !db) return;
+  if (CATS.some(c => picks[c.key] === null)) return;
+  const body = {person: meId, date: logDate, ts: Date.now()};
+  for (const c of CATS) body[c.key] = picks[c.key];
+  try {
+    await db.doc("entries/" + meId + "_" + logDate).set(body);
+    toast(logDate === todayET() ? "Logged. See you on the board." : "Backfilled " + fmtLong(logDate));
+  } catch(e){ toast("Submit failed: " + (e && e.message || "try again")); }
+}
+
+/* ----- scoring ----- */
+function statsFor(pid){
+  const p = roster.find(x => x.id === pid);
+  if (!p) return null;
+  const today = todayET();
+  const days = Math.max(1, dayDiff(p.joined, today) + 1);
+  let n = 0, sums = {workout:0, alcohol:0, vice:0};
+  for (let i=0; i<days; i++){
+    const e = entry(pid, addDays(p.joined, i));
+    if (!e) continue;
+    n++;
+    for (const c of CATS) sums[c.key] += Number(e[c.key]) || 0;
+  }
+  const pct = {};
+  for (const c of CATS) pct[c.key] = n ? Math.round((1 - sums[c.key]/(n*10)) * 100) : null;
+  const vals = CATS.map(c => pct[c.key]).filter(v => v !== null);
+  return {
+    logged:n, days,
+    loggedPct: Math.round(100*n/days),
+    pct,
+    overall: vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null,
+  };
+}
+
+/* ----- render: tabs ----- */
+function renderAll(){
+  $("mechip").textContent = me() ? "You are " + me().name + " ▾" : "Who are you?";
+  ({log:renderLog, board:renderBoard, leaders:renderLeaders, me:renderMe})[tab]();
+}
+
+function switchTab(next){
+  tab = next;
+  for (const b of document.querySelectorAll("nav.tabs button"))
+    b.setAttribute("aria-selected", String(b.dataset.tab === next));
+  for (const v of ["log","board","leaders","me"]) $("view-"+v).hidden = v !== next;
+  renderAll();
+}
+
+/* ----- render: log ----- */
+function renderLog(){
+  const v = $("view-log");
+  const p = me();
+  if (!p){
+    v.innerHTML = `<div class="empty">First, tell the squad who you are.<br><br></div>`;
+    const b = document.createElement("button");
+    b.className = "btn"; b.textContent = "Pick or add your name";
+    b.onclick = openWho;
+    v.querySelector(".empty").appendChild(b);
+    return;
+  }
+  if (logDate < p.joined) logDate = p.joined;
+  if (logDate > todayET()) logDate = todayET();
+  const existing = entry(meId, logDate);
+  if (existing && CATS.every(c => picks[c.key] === null)){
+    for (const c of CATS) picks[c.key] = Number(existing[c.key]);
+  }
+  v.innerHTML = "";
+
+  const dr = document.createElement("div");
+  dr.className = "logdate";
+  dr.innerHTML = `<label for="logdate">Logging for</label>
+    <input type="date" id="logdate" min="${p.joined}" max="${todayET()}" value="${logDate}">
+    <span class="hint">${logDate === todayET() ? "today (ET)" : "backfilling a missed day"}</span>`;
+  dr.querySelector("input").onchange = ev => {
+    logDate = ev.target.value || todayET();
+    picks = {workout:null, alcohol:null, vice:null};
+    renderLog();
+  };
+  v.appendChild(dr);
+
+  for (const c of CATS){
+    const card = document.createElement("div");
+    card.className = "qcard";
+    card.innerHTML = `<h3>${c.q}</h3><p class="scale">${c.scale}</p>`;
+    const seg = document.createElement("div");
+    seg.className = "seg";
+    for (let i=0; i<=10; i++){
+      const b = document.createElement("button");
+      const col = rampColor(i);
+      b.type = "button";
+      b.textContent = i;
+      b.style.setProperty("--dot", col.css);
+      b.style.setProperty("--seltext", textOn(col.rgb));
+      b.setAttribute("aria-pressed", String(picks[c.key] === i));
+      b.setAttribute("aria-label", c.label + " score " + i);
+      b.onclick = () => { picks[c.key] = i; renderLog(); };
+      seg.appendChild(b);
+    }
+    card.appendChild(seg);
+    v.appendChild(card);
+  }
+
+  const row = document.createElement("div");
+  row.className = "submitrow";
+  const btn = document.createElement("button");
+  btn.className = "btn";
+  btn.textContent = existing ? "Update this day" : "Submit";
+  btn.disabled = CATS.some(c => picks[c.key] === null) || !db;
+  btn.onclick = submitLog;
+  row.appendChild(btn);
+  const note = document.createElement("span");
+  note.className = "submitnote";
+  note.textContent = existing ? "Already logged — submitting again overwrites it."
+                              : "All three answers needed.";
+  row.appendChild(note);
+  v.appendChild(row);
+}
+
+/* ----- render: board ----- */
+function boardMarkup(people){
+  const today = todayET();
+  const start = people.reduce((a,p) => p.joined < a ? p.joined : a, today);
+  const nDays = dayDiff(start, today) + 1;
+
+  let head = `<div class="brow dayhead"><span class="blabel"></span><div class="cells">`;
+  for (let i=0; i<nDays; i++){
+    const d = addDays(start, i);
+    const [,m,dd] = d.split("-").map(Number);
+    const isM = dd === 1 || i === 0;
+    head += `<span class="${isM?"m ":""}${d===today?"today":""}" ${isM?`data-m="${MONTHS[m-1]}"`:""}>${dd}</span>`;
+  }
+  head += `</div></div>`;
+
+  let out = head;
+  for (const p of people){
+    const s = statsFor(p.id);
+    out += `<div class="brow"><span class="bname">${esc(p.name)}<small>${s.overall === null ? "no data yet" : s.overall + "% overall"}</small></span></div>`;
+    for (const c of CATS){
+      out += `<div class="brow"><span class="blabel">${c.label}</span><div class="cells">`;
+      for (let i=0; i<nDays; i++){
+        const d = addDays(start, i);
+        if (d < p.joined){ out += `<span class="cell prejoin"></span>`; continue; }
+        const e = entry(p.id, d);
+        if (!e || e[c.key] === undefined){ out += `<span class="cell blank" title="${esc(p.name)} · ${fmtLong(d)} · not logged"></span>`; }
+        else {
+          const val = Number(e[c.key]);
+          out += `<span class="cell" style="background:${rampColor(val).css}" title="${esc(p.name)} · ${fmtLong(d)} · ${c.label}: ${val}"></span>`;
+        }
+      }
+      out += `</div></div>`;
+    }
+  }
+  return out;
+}
+
+const legendHTML = () => `<div class="legend">
+  <span>0</span><span class="bar">${[0,2,4,6,8,10].map(v=>`<i style="background:${rampColor(v).css}"></i>`).join("")}</span><span>10</span>
+  <span style="margin-left:10px"><span class="blank"></span> missed day</span>
+</div>`;
+
+function renderBoard(){
+  const v = $("view-board");
+  if (!roster.length){ v.innerHTML = `<div class="empty">Nobody on the board yet. Be the first to join.</div>`; return; }
+  v.innerHTML = legendHTML() + `<div class="boardscroll"><div class="board">${boardMarkup(roster)}</div></div>`;
+  scrollBoardToEnd(v);
+}
+
+function scrollBoardToEnd(v){
+  const sc = v.querySelector(".boardscroll");
+  if (sc) sc.scrollLeft = sc.scrollWidth;
+}
+
+/* ----- render: leaderboard ----- */
+function renderLeaders(){
+  const v = $("view-leaders");
+  if (!roster.length){ v.innerHTML = `<div class="empty">Nobody on the board yet.</div>`; return; }
+  const rows = roster.map(p => ({p, s: statsFor(p.id)}));
+
+  const card = (title, sub, get) => {
+    const ranked = rows.slice().sort((a,b) => (get(b.s) ?? -1) - (get(a.s) ?? -1));
+    let h = `<div class="lcard"><h3>${title}<small>${sub}</small></h3>`;
+    ranked.forEach((r, i) => {
+      const val = get(r.s);
+      const col = val === null ? null : rampColor(10 - val/10);
+      h += `<div class="lrow">
+        <span class="rk">${i+1}</span>
+        <span class="nm">${esc(r.p.name)}
+          <span class="track"><i style="width:${val ?? 0}%;background:${col ? col.css : "transparent"}"></i></span>
+        </span>
+        <span class="pct">${val === null ? `<small>no data</small>` : val + "%"}</span>
+      </div>`;
+    });
+    return h + `</div>`;
+  };
+
+  let html = `<div class="lgrid">`;
+  html += card("Overall", "average of all three virtues", s => s.overall);
+  for (const c of CATS) html += card(c.stat, c.label.toLowerCase() + " · 100% is flawless", s => s.pct[c.key]);
+  html += card("Showed Up", "days logged since joining", s => s.loggedPct);
+  html += `</div>`;
+  v.innerHTML = html;
+}
+
+/* ----- render: me ----- */
+function renderMe(){
+  const v = $("view-me");
+  const p = me();
+  if (!p){
+    v.innerHTML = `<div class="empty">Pick your name first — use the button top right.</div>`;
+    return;
+  }
+  const s = statsFor(meId);
+  let html = `<div class="stats">`;
+  html += `<div class="stat"><div class="v">${s.overall === null ? "—" : s.overall + "%"}</div><div class="k">Overall</div></div>`;
+  for (const c of CATS)
+    html += `<div class="stat"><div class="v">${s.pct[c.key] === null ? "—" : s.pct[c.key] + "%"}</div><div class="k">${c.stat}</div></div>`;
+  html += `<div class="stat"><div class="v">${s.logged}/${s.days}</div><div class="k">Days logged</div></div>`;
+  html += `</div>`;
+  html += legendHTML() + `<div class="boardscroll"><div class="board">${boardMarkup([p])}</div></div>`;
+  v.innerHTML = html;
+  scrollBoardToEnd(v);
+}
+
+/* ----- who-am-I dialog ----- */
+function openWho(){
+  const list = $("plist");
+  list.innerHTML = "";
+  for (const p of roster){
+    const b = document.createElement("button");
+    b.textContent = p.name + (p.id === meId ? "  ✓" : "");
+    if (p.id === meId) b.dataset.me = "1";
+    b.onclick = () => {
+      meId = p.id;
+      try{ localStorage.setItem("vs_me", meId); }catch(e){}
+      $("whodlg").close();
+      picks = {workout:null, alcohol:null, vice:null};
+      renderAll();
+    };
+    list.appendChild(b);
+  }
+  $("addname").value = "";
+  if (!$("whodlg").open) $("whodlg").showModal();
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch])); }
+
+/* ----- boot ----- */
+for (const b of document.querySelectorAll("nav.tabs button")) b.onclick = () => switchTab(b.dataset.tab);
+$("mechip").onclick = openWho;
+$("addform").onsubmit = ev => {
+  ev.preventDefault();
+  addPerson($("addname").value);
+  $("whodlg").close();
+};
+renderAll();
+connect();
+</script>
