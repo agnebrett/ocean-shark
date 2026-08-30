@@ -16,6 +16,28 @@ Other behaviors:
 
 ## How it's hosted
 
-The live, shared copy runs as a Claude artifact, which provides the multi-device shared database (`window.claude` → the `db` capability). Each device picks its identity once ("Who are you?"), remembered in that browser.
+The page is plain static HTML — anyone with the URL can use it, no accounts. Shared data lives in a free Firebase Realtime Database, which the page reads and writes over plain HTTPS (REST + server-sent events for live updates; no SDK). Each device picks its identity once ("Who are you?"), remembered in that browser.
 
-This file in the repo is the source of record for that artifact. Opened directly (file system or GitHub Pages), the page renders but shows a "live sync unavailable" banner — the shared store only exists when the page is served as the artifact on claude.ai. To change the app, edit `index.html` here and republish the artifact from it.
+### One-time setup
+
+1. **Create the database** (free, needs a Google login):
+   - Go to <https://console.firebase.google.com> → **Create a project** (any name, Analytics off is fine).
+   - In the project: **Build → Realtime Database → Create database** (any location, **locked mode**).
+   - Open the **Rules** tab, replace the contents with the following, and hit **Publish** (don't use "test mode" — its rules auto-expire after 30 days):
+
+     ```json
+     {
+       "rules": {
+         ".read": true,
+         ".write": true
+       }
+     }
+     ```
+
+   - On the **Data** tab, copy the database URL shown at the top — it looks like `https://YOUR-PROJECT-default-rtdb.firebaseio.com`.
+2. **Wire it in**: paste that URL into the `FIREBASE_DB_URL` constant near the top of the `<script>` in `index.html`.
+3. **Host the page**: make the repo public (Settings → General → Danger Zone → Change visibility), then Settings → **Pages** → deploy from the default branch, root folder. The app will be at `https://<user>.github.io/ocean-shark/health-challenge/`.
+
+### Caveat
+
+The rules above mean anyone who has the database URL can read and write the data. For a friends' challenge whose worst-case attack is someone forging Eddie's workout scores, that's an acceptable trade for zero-login simplicity — just don't put anything sensitive in it.

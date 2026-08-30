@@ -209,7 +209,7 @@
   </header>
 
   <div class="banner" id="offline" hidden>
-    <strong>Live sync unavailable.</strong> Open this page from its claude.ai artifact link while signed in — that's where the shared data lives. Nothing you enter here will be saved.
+    <strong>Not connected to the shared database.</strong> Either this page hasn't been set up yet (the database URL at the top of <code>index.html</code> is blank — see the README) or the connection failed. Nothing you enter will be saved until it connects.
   </div>
 
   <nav class="tabs" role="tablist">
@@ -274,8 +274,13 @@ const dayDiff = (a,b) => Math.round((toUTC(b) - toUTC(a)) / 86400000);
 const MONTHS  = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const fmtLong = iso => { const [y,m,d] = iso.split("-").map(Number); return `${MONTHS[m-1]} ${d}, ${y}`; };
 
+/* ----- shared store: Firebase Realtime Database, plain REST ----- */
+/* Paste your database URL between the quotes (Firebase console → Realtime
+   Database → Data tab), e.g. "https://vice-squad-default-rtdb.firebaseio.com" */
+const FIREBASE_DB_URL = "";
+
 /* ----- state ----- */
-let db = null;
+let connected = false;
 let roster = [];                 // [{id, name, joined}]
 let entries = new Map();         // "pid_date" -> {workout, alcohol, vice}
 let meId = null;
@@ -298,45 +303,72 @@ function toast(msg){
 }
 
 /* ----- shared store wiring ----- */
-async function connect(){
-  db = window.claude ? await claude.use("db") : null;
-  if (!db){ $("offline").hidden = false; renderAll(); return; }
-  db.collection("roster").onSnapshot(snap => {
-    roster = snap.docs.filter(d=>d.exists).map(d => ({id:d.id, ...d.data()}))
-                      .sort((a,b) => (a.joined < b.joined ? -1 : a.joined > b.joined ? 1 : a.name.localeCompare(b.name)));
+const fbUrl = path => FIREBASE_DB_URL.replace(/\/+$/,"") + "/" + path + ".json";
+
+async function refresh(){
+  if (!FIREBASE_DB_URL) return;
+  try {
+    const res = await fetch(fbUrl(""), {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json() || {};
+    roster = Object.entries(data.roster || {}).map(([id,v]) => ({id, ...v}))
+      .sort((a,b) => (a.joined < b.joined ? -1 : a.joined > b.joined ? 1 : a.name.localeCompare(b.name)));
+    entries = new Map(Object.entries(data.entries || {}));
     if (meId && !me()){ meId = null; try{ localStorage.removeItem("vs_me"); }catch(e){} }
+    connected = true;
+    $("offline").hidden = true;
     renderAll();
-  }, e => toast("Roster sync lost — reload the page"));
-  db.collection("entries").onSnapshot(snap => {
-    entries = new Map();
-    for (const d of snap.docs){ if (d.exists) entries.set(d.id, d.data()); }
-    renderAll();
-  }, e => toast("Entry sync lost — reload the page"));
+  } catch(e){
+    if (!connected){ $("offline").hidden = false; }
+  }
+}
+
+function connect(){
+  if (!FIREBASE_DB_URL){ $("offline").hidden = false; renderAll(); return; }
+  refresh();
+  // Live updates: the database's REST API speaks server-sent events.
+  // Any change just triggers a (debounced) refetch — the dataset is small.
+  try {
+    const es = new EventSource(fbUrl(""));
+    let t = null;
+    const bump = () => { clearTimeout(t); t = setTimeout(refresh, 300); };
+    es.addEventListener("put", bump);
+    es.addEventListener("patch", bump);
+  } catch(e){}
+  setInterval(refresh, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 }
 
 async function addPerson(name){
   name = name.trim().replace(/\s+/g," ");
   if (!name) return;
   if (roster.some(p => p.name.toLowerCase() === name.toLowerCase())){ toast(name + " is already on the board"); return; }
-  if (!db){ toast("Live sync unavailable — can't join from here"); return; }
+  if (!connected){ toast("Not connected — can't join yet"); return; }
   try {
-    const ref = await db.collection("roster").add({name, joined: todayET(), created: Date.now()});
-    meId = ref.id;
+    const res = await fetch(fbUrl("roster"), {method:"POST", body: JSON.stringify({name, joined: todayET(), created: Date.now()})});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const out = await res.json();          // {name: "<new push id>"}
+    meId = out.name;
     try{ localStorage.setItem("vs_me", meId); }catch(e){}
+    roster.push({id: meId, name, joined: todayET()});
     toast("Welcome to the squad, " + name);
     renderAll();
+    refresh();
   } catch(e){ toast("Couldn't join: " + (e && e.message || "unknown error")); }
 }
 
 async function submitLog(){
   const p = me();
-  if (!p || !db) return;
+  if (!p || !connected) return;
   if (CATS.some(c => picks[c.key] === null)) return;
   const body = {person: meId, date: logDate, ts: Date.now()};
   for (const c of CATS) body[c.key] = picks[c.key];
   try {
-    await db.doc("entries/" + meId + "_" + logDate).set(body);
+    const res = await fetch(fbUrl("entries/" + meId + "_" + logDate), {method:"PUT", body: JSON.stringify(body)});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    entries.set(meId + "_" + logDate, body);
     toast(logDate === todayET() ? "Logged. See you on the board." : "Backfilled " + fmtLong(logDate));
+    renderAll();
   } catch(e){ toast("Submit failed: " + (e && e.message || "try again")); }
 }
 
@@ -437,7 +469,7 @@ function renderLog(){
   const btn = document.createElement("button");
   btn.className = "btn";
   btn.textContent = existing ? "Update this day" : "Submit";
-  btn.disabled = CATS.some(c => picks[c.key] === null) || !db;
+  btn.disabled = CATS.some(c => picks[c.key] === null) || !connected;
   btn.onclick = submitLog;
   row.appendChild(btn);
   const note = document.createElement("span");
