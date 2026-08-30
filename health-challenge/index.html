@@ -1,4 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#FBFAF7">
 <title>Vice Squad</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vice Squad">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
@@ -200,7 +213,8 @@
   @media (prefers-reduced-motion: reduce){ #toast{transition:none} }
   [hidden]{display:none!important}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header class="top">
     <h1>Vice Squad</h1>
@@ -627,3 +641,5 @@ $("addform").onsubmit = ev => {
 renderAll();
 connect();
 </script>
+</body>
+</html>
