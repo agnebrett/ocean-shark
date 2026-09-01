@@ -30,7 +30,6 @@ Progress is saved in your browser (`localStorage`), so it persists between visit
 
 ## Using it on your phone
 
-Any of these works:
+The app deploys to GitHub Pages automatically on every push (see `.github/workflows/pages.yml`): **https://agnebrett.github.io/ocean-shark/**
 
-- Enable GitHub Pages for this repo (Settings → Pages → deploy from the default branch) and open the URL on your phone. Add it to your home screen and it behaves like an app.
-- Or just open `index.html` directly from the file system in a mobile browser.
+It's a full PWA — open that URL on your phone and add it to your home screen (iOS: Share → Add to Home Screen; Android: menu → Add to Home screen / Install app). It launches fullscreen with its own icon and works offline after the first load.
