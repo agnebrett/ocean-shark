@@ -1,0 +1,32 @@
+name: Deploy Fretwork
+
+# GitHub Pages for this repo serves from claude/health-challenge-tracker-jwa112
+# (Fretwork at the site root, the health-challenge app in its subfolder).
+# This workflow ships Fretwork updates by merging this branch into that one.
+on:
+  push:
+    branches: [claude/guitar-chord-quiz-app-r1tl1x]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-fretwork
+  cancel-in-progress: false
+
+jobs:
+  merge-to-pages-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/health-challenge-tracker-jwa112
+          fetch-depth: 0
+      - name: Merge Fretwork branch and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin claude/guitar-chord-quiz-app-r1tl1x
+          git merge --no-edit origin/claude/guitar-chord-quiz-app-r1tl1x
+          git push origin claude/health-challenge-tracker-jwa112
