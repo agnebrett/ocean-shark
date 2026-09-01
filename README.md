@@ -30,6 +30,10 @@ Progress is saved in your browser (`localStorage`), so it persists between visit
 
 ## Using it on your phone
 
-The app deploys to GitHub Pages automatically on every push (see `.github/workflows/pages.yml`): **https://agnebrett.github.io/ocean-shark/**
+The app is live on GitHub Pages: **https://agnebrett.github.io/ocean-shark/**
 
 It's a full PWA — open that URL on your phone and add it to your home screen (iOS: Share → Add to Home Screen; Android: menu → Add to Home screen / Install app). It launches fullscreen with its own icon and works offline after the first load.
+
+### How deployment works
+
+GitHub Pages serves the branch `claude/health-challenge-tracker-jwa112`, which hosts two apps: Fretwork at the site root and the health-challenge tracker at `/health-challenge/`. Every push to this branch (`claude/guitar-chord-quiz-app-r1tl1x`) triggers `.github/workflows/deploy.yml`, which merges it into the Pages branch — so Fretwork changes go live automatically without touching the tracker.
